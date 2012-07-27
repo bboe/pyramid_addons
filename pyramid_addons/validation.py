@@ -1,5 +1,4 @@
 from functools import wraps
-from pyramid.httpexceptions import HTTPBadRequest
 from .helpers import http_bad_request
 
 # Inspirted by reddit's validator code
@@ -51,8 +50,8 @@ class Validator(object):
 
 class WhiteSpaceString(Validator):
     '''A validator for a generic string that allows whitespace on both ends.'''
-    def __init__(self, *args, min_length=0, max_length=None):
-        super(WhiteSpaceString, self).__init__(*args)
+    def __init__(self, param, min_length=0, max_length=None):
+        super(WhiteSpaceString, self).__init__(param)
         self.min_length = min_length
         self.max_length = max_length
 
