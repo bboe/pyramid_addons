@@ -1,3 +1,4 @@
+import re
 from functools import wraps
 from .helpers import http_bad_request
 
@@ -50,20 +51,29 @@ class Validator(object):
 
 class WhiteSpaceString(Validator):
     '''A validator for a generic string that allows whitespace on both ends.'''
-    def __init__(self, param, min_length=0, max_length=None):
+    def __init__(self, param, invalid_re=None, min_length=0, max_length=None):
         super(WhiteSpaceString, self).__init__(param)
         self.min_length = min_length
         self.max_length = max_length
+        if invalid_re and not hasattr(invalid_re, 'match'):
+            self.invalid_re = re.compile(invalid_re)
+        else:
+            self.invalid_re = invalid_re
 
     def run(self, value, errors):
         if not isinstance(value, str):
             self.add_error(errors, 'must be a string')
-        elif self.min_length and len(value) < self.min_length:
+            return value
+
+        if self.min_length and len(value) < self.min_length:
             self.add_error(errors,
                            'must be >= {0} characters'.format(self.min_length))
         elif self.max_length and len(value) > self.max_length:
             self.add_error(errors,
                            'must be <= {0} characters'.format(self.max_length))
+
+        if self.invalid_re and self.invalid_re.search(value):
+            self.add_error(errors, 'contains invalid content')
         return value
 
 

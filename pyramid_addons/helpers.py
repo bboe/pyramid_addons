@@ -9,13 +9,13 @@ from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
                                     HTTPException, HTTPGone)
 from pyramid.renderers import get_renderer
-from pytz import timezone
+from pytz import timezone, utc
 
 TIMEZONE = 'US/Pacific'  # Move this into settings at some point
 
 
 def complete_date(the_datetime):
-    return (the_datetime.replace(tzinfo=pytz.utc)
+    return (the_datetime.replace(tzinfo=utc)
             .astimezone(timezone(TIMEZONE)).strftime('%H:%M, %A %B %d, %Y'))
 
 

@@ -29,4 +29,5 @@ setup(name=PACKAGE_NAME,
                    'Programming Language :: Python :: 3.2',
                    'Topic :: Utilities'],
       install_requires=['pyramid>=1.3', 'pytz'],
-      packages=[PACKAGE_NAME])
+      packages=[PACKAGE_NAME],
+      test_suite=PACKAGE_NAME)
