@@ -1,4 +1,9 @@
-from configparser import RawConfigParser
+try:
+    # Python 3
+    from configparser import RawConfigParser
+except ImportError:
+    # Python 2.6+
+    from ConfigParser import RawConfigParser
 from datetime import datetime
 from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
