@@ -7,7 +7,7 @@ except ImportError:
 from datetime import datetime
 from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
-                                    HTTPException, HTTPGone)
+                                    HTTPException, HTTPGone, HTTPOk)
 from pyramid.renderers import get_renderer
 from pytz import timezone, utc
 
@@ -41,6 +41,11 @@ def http_gone(request, redir_location, headers=None):
     if headers:
         request.response.headerlist.extend(headers)
     return {'redir_location': redir_location}
+
+
+def http_ok(request, message):
+    request.response.status = HTTPOk.code
+    return {'message': message}
 
 
 def load_settings(config_file):
