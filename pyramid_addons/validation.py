@@ -49,6 +49,31 @@ class Validator(object):
                       .format(self.param, message))
 
 
+class TextNumber(Validator):
+    '''A validator that accepts only text that represents integers.'''
+    def __init__(self, param, min_value=None, max_value=None):
+        super(TextNumber, self).__init__(param)
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def run(self, value, errors):
+        if not isinstance(value, str):
+            self.add_error(errors, 'must be a string')
+            return value
+
+        try:
+            num = int(value)
+        except ValueError:
+            self.add_error(errors, 'must only contains digits')
+            return value
+
+        if self.min_value is not None and num < self.min_value:
+            self.add_error(errors, 'must be >= {0}'.format(self.min_value))
+        elif self.max_value is not None and num > self.max_value:
+            self.add_error(errors, 'must be <= {0}'.format(self.max_value))
+        return num
+
+
 class WhiteSpaceString(Validator):
     '''A validator for a generic string that allows whitespace on both ends.'''
     def __init__(self, param, invalid_re=None, min_length=0, max_length=None):
