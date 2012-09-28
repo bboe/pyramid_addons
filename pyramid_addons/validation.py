@@ -20,16 +20,19 @@ def validated_form(*simple_vals, **param_vals):
             # Validate each of the named parameters
             error_messages = []
             validated_params = {}
-            for param, validator in param_vals.items():
-                if param in data:
+            for dst_param, validator in param_vals.items():
+                src_param = validator.param
+                if src_param in data:
                     validator_errors = []
-                    result = validator(data[param], validator_errors)
+                    result = validator(data[src_param], validator_errors)
                     if validator_errors:
                         error_messages.extend(validator_errors)
                     else:
-                        validated_params[param] = result
+                        validated_params[dst_param] = result
+                elif validator.optional:
+                    validated_params[dst_param] = validator.default
                 else:
-                    error_messages.append(MISSING_ERROR.format(param))
+                    error_messages.append(MISSING_ERROR.format(src_param))
             if error_messages:
                 return http_bad_request(request, error_messages)
             return function(request, **validated_params)
@@ -38,8 +41,13 @@ def validated_form(*simple_vals, **param_vals):
 
 
 class Validator(object):
-    def __init__(self, param):
+    '''A base validator that will accept any input.
+
+    This class should be extended to implement real validators.'''
+    def __init__(self, param, optional=False, default=None):
         self.param = param
+        self.optional = optional
+        self.default = default
 
     def __call__(self, value, *args):
         return self.run(value, *args)
@@ -48,11 +56,14 @@ class Validator(object):
         errors.append('Validation error on param {0!r}: {1}'
                       .format(self.param, message))
 
+    def run(self, value, errors):
+        return value
+
 
 class TextNumber(Validator):
     '''A validator that accepts only text that represents integers.'''
-    def __init__(self, param, min_value=None, max_value=None):
-        super(TextNumber, self).__init__(param)
+    def __init__(self, param, min_value=None, max_value=None, **kwargs):
+        super(TextNumber, self).__init__(param, **kwargs)
         self.min_value = min_value
         self.max_value = max_value
 
@@ -76,8 +87,9 @@ class TextNumber(Validator):
 
 class WhiteSpaceString(Validator):
     '''A validator for a generic string that allows whitespace on both ends.'''
-    def __init__(self, param, invalid_re=None, min_length=0, max_length=None):
-        super(WhiteSpaceString, self).__init__(param)
+    def __init__(self, param, invalid_re=None, min_length=0, max_length=None,
+                 **kwargs):
+        super(WhiteSpaceString, self).__init__(param, **kwargs)
         self.min_length = min_length
         self.max_length = max_length
         if invalid_re and not hasattr(invalid_re, 'match'):
