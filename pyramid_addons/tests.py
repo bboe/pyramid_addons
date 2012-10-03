@@ -1,11 +1,11 @@
 import re
 import unittest
 from pyramid.testing import DummyRequest
-from pyramid_addons.validation import (String, TextNumber, Validator,
+from pyramid_addons.validation import (List, String, TextNumber, Validator,
                                        WhiteSpaceString, validated_form)
 
 
-class TestDecorator(unittest.TestCase):
+class DecoratorTest(unittest.TestCase):
     @staticmethod
     @validated_form(required=Validator('field_1'),
                     optional=Validator('field_2', optional=True,
@@ -31,6 +31,36 @@ class TestDecorator(unittest.TestCase):
         request = DummyRequest(json_body=json_body)
         self.assertEqual(('data_1', 'foobar'), self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
+
+
+class ListTest(unittest.TestCase):
+    def test_fail_all(self):
+        validator = List('field', String(None, min_length=2), min_elements=3)
+        errors = []
+        data = ['a', 'b']
+        self.assertEqual(data, validator(data, errors))
+        self.assertEqual(3, len(errors))
+
+    def test_fail_too_few_elements(self):
+        validator = List('field', String(''), min_elements=3)
+        errors = []
+        data = ['a', 'b']
+        self.assertEqual(data, validator(data, errors))
+        self.assertEqual(1, len(errors))
+
+    def test_fail_too_many_elements(self):
+        validator = List('field', String(''), max_elements=3)
+        errors = []
+        data = ['a', 'b', 'c', 'd']
+        self.assertEqual(data, validator(data, errors))
+        self.assertEqual(1, len(errors))
+
+    def test_successful(self):
+        validator = List('field', String(''), min_elements=3, max_elements=3)
+        errors = []
+        data = [' a ', ' b ', ' c ']
+        self.assertEqual([x.strip() for x in data], validator(data, errors))
+        self.assertEqual(0, len(errors))
 
 
 class TextNumberTests(unittest.TestCase):

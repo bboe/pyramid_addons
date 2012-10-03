@@ -60,6 +60,30 @@ class Validator(object):
         return value
 
 
+class List(Validator):
+    '''A validator that validates items within a list.'''
+    def __init__(self, param, validator, min_elements=None, max_elements=None,
+                 **kwargs):
+        super(List, self).__init__(param, **kwargs)
+        self.validator = validator
+        self.min_elements = min_elements
+        self.max_elements = max_elements
+
+    def run(self, value, errors):
+        if not isinstance(value, list):
+            self.add_error(errors, 'must be a list')
+            return value
+        msg = 'must contain {0}= {1} elements'
+        if self.min_elements is not None and len(value) < self.min_elements:
+            self.add_error(errors, msg.format('>', self.min_elements))
+        elif self.max_elements is not None and len(value) > self.max_elements:
+            self.add_error(errors, msg.format('<', self.max_elements))
+        for i, item in enumerate(value):
+            self.validator.param = (self.param, i)
+            value[i] = self.validator(item, errors)
+        return value
+
+
 class TextNumber(Validator):
     '''A validator that accepts only text that represents integers.'''
     def __init__(self, param, min_value=None, max_value=None, **kwargs):
