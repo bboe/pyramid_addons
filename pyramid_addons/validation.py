@@ -60,7 +60,7 @@ class Validator(object):
         return self.run(value, *args)
 
     def add_error(self, errors, message):
-        errors.append('Validation error on param {0!r}: {1}'
+        errors.append('Validation error on param \'{0}\': {1}'
                       .format(self.param, message))
 
     def run(self, value, errors):
