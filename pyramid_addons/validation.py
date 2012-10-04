@@ -1,9 +1,16 @@
 import re
+import sys
 from functools import wraps
 from .helpers import http_bad_request
 
 # Inspirted by reddit's validator code
 # github.com/reddit/reddit/blob/master/r2/r2/controllers/validator/validator.py
+
+# Configure text type
+if sys.version_info < (3, 0):
+    text_type = unicode
+else:
+    text_type = str
 
 
 def validated_form(*simple_vals, **param_vals):
@@ -92,8 +99,8 @@ class TextNumber(Validator):
         self.max_value = max_value
 
     def run(self, value, errors):
-        if not isinstance(value, str):
-            self.add_error(errors, 'must be a string')
+        if not isinstance(value, text_type):
+            self.add_error(errors, 'must be a unicode string')
             return value
 
         try:
@@ -122,8 +129,8 @@ class WhiteSpaceString(Validator):
             self.invalid_re = invalid_re
 
     def run(self, value, errors):
-        if not isinstance(value, str):
-            self.add_error(errors, 'must be a string')
+        if not isinstance(value, text_type):
+            self.add_error(errors, 'must be a unicode string')
             return value
 
         if self.min_length and len(value) < self.min_length:
