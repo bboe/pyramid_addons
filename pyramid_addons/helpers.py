@@ -90,8 +90,8 @@ def site_layout(layout_template):
     """
     def initial_wrap(function):
         @wraps(function)
-        def wrapped(request, **kwargs):
-            info = function(request, **kwargs)
+        def wrapped(request, *args, **kwargs):
+            info = function(request, *args, **kwargs)
             if isinstance(info, HTTPException):
                 return info  # HTTPException objects should be returned as is
             renderer = get_renderer(layout_template)
