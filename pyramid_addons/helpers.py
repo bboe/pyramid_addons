@@ -101,6 +101,7 @@ def site_layout(layout_template):
             info['_R'] = request.route_path
             # Required parameters that can be overwritten
             info.setdefault('javascripts', None)
+            info.setdefault('css_files', None)
             info.setdefault('page_title', None)
             return info
         return wrapped
