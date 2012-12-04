@@ -3,8 +3,35 @@ from __future__ import unicode_literals
 import re
 import unittest
 from pyramid.testing import DummyRequest
-from pyramid_addons.validation import (List, String, TextNumber, Validator,
-                                       WhiteSpaceString, validated_form)
+from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
+                                       TextNumber, Validator, WhiteSpaceString,
+                                       validated_form)
+
+
+class AndTest(unittest.TestCase):
+    def test_fail_all(self):
+        validator = And('field', Equals('', 'yes'), Equals('', 'yes'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(1, len(errors))
+
+    def test_fail_first(self):
+        validator = And('field', Equals('', 'yes'), Equals('', 'no'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(1, len(errors))
+
+    def test_fail_last(self):
+        validator = And('field', Equals('', 'no'), Equals('', 'yes'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(1, len(errors))
+
+    def test_pass(self):
+        validator = And('field', Equals('', 'yes'), Equals('', 'yes'))
+        errors = []
+        self.assertEqual('yes', validator('yes', errors))
+        self.assertEqual(0, len(errors))
 
 
 class DecoratorTest(unittest.TestCase):
@@ -35,6 +62,40 @@ class DecoratorTest(unittest.TestCase):
         self.assertEqual(200, request.response.status_code)
 
 
+class EnumTest(unittest.TestCase):
+    def test_fail(self):
+        validator = Enum('field', 1, 'true', 'TRUE')
+        errors = []
+        self.assertEqual(0, validator(0, errors))
+        self.assertEqual(1, len(errors))
+
+    def test_pass_first_value(self):
+        validator = Enum('field', 1, 'true', 'TRUE')
+        errors = []
+        self.assertEqual(1, validator(1, errors))
+        self.assertEqual(0, len(errors))
+
+    def test_pass_last_value(self):
+        validator = Enum('field', 1, 'true', 'TRUE')
+        errors = []
+        self.assertEqual('TRUE', validator('TRUE', errors))
+        self.assertEqual(0, len(errors))
+
+
+class EqualsTest(unittest.TestCase):
+    def test_fail(self):
+        validator = Equals('field', 'yes')
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(1, len(errors))
+
+    def test_pass(self):
+        validator = Equals('field', 'yes')
+        errors = []
+        self.assertEqual('yes', validator('yes', errors))
+        self.assertEqual(0, len(errors))
+
+
 class ListTest(unittest.TestCase):
     def test_fail_all(self):
         validator = List('field', String(None, min_length=2), min_elements=3)
@@ -63,6 +124,48 @@ class ListTest(unittest.TestCase):
         data = [' a ', ' b ', ' c ']
         self.assertEqual([x.strip() for x in data], validator(data, errors))
         self.assertEqual(0, len(errors))
+
+
+class OrTest(unittest.TestCase):
+    def test_fail_all(self):
+        validator = Or('field', Equals('', 'yes'), Equals('', 'YES'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(1, len(errors))
+
+    def test_pass_first(self):
+        validator = Or('field', Equals('', 'no'), Equals('', 'yes'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(0, len(errors))
+
+    def test_pass_second(self):
+        validator = Or('field', Equals('', 'yes'), Equals('', 'no'))
+        errors = []
+        self.assertEqual('no', validator('no', errors))
+        self.assertEqual(0, len(errors))
+
+    def test_pass_all(self):
+        validator = Or('field', Equals('', 'yes'), Equals('', 'yes'))
+        errors = []
+        self.assertEqual('yes', validator('yes', errors))
+        self.assertEqual(0, len(errors))
+
+
+class StringTests(unittest.TestCase):
+    def test_fail_invalid_whitespace(self):
+        validator = String('field', invalid_re=' ')
+        errors = []
+        validator(' hello world ', errors)
+        self.assertEqual(1, len(errors))
+
+    def test_pass_all(self):
+        validator = String('field', invalid_re='foo', min_length=3,
+                           max_length=3)
+        errors = []
+        value = validator(' bar ', errors)
+        self.assertEqual(0, len(errors))
+        self.assertEqual('bar', value)
 
 
 class TextNumberTests(unittest.TestCase):
@@ -114,22 +217,6 @@ class TextNumberTests(unittest.TestCase):
         value = validator(' +0016 ', errors)
         self.assertEqual(0, len(errors))
         self.assertEqual(16, value)
-
-
-class StringTests(unittest.TestCase):
-    def test_fail_invalid_whitespace(self):
-        validator = String('field', invalid_re=' ')
-        errors = []
-        validator(' hello world ', errors)
-        self.assertEqual(1, len(errors))
-
-    def test_pass_all(self):
-        validator = String('field', invalid_re='foo', min_length=3,
-                           max_length=3)
-        errors = []
-        value = validator(' bar ', errors)
-        self.assertEqual(0, len(errors))
-        self.assertEqual('bar', value)
 
 
 class WhiteSpaceStringTests(unittest.TestCase):

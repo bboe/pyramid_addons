@@ -149,3 +149,81 @@ class String(WhiteSpaceString):
     '''A validator that removes whitespace on both ends.'''
     def run(self, value, *args):
         return super(String, self).run(value.strip(), *args)
+
+
+class Equals(Validator):
+    '''A validator that checks for object equality'''
+
+    def __init__(self, param, compare, **kwargs):
+        super(Equals, self).__init__(param, **kwargs)
+        self.compare = compare
+
+    def run(self, value, errors):
+        if not value == self.compare:
+            self.add_error(errors,
+                           "must equal '{0}'".format(self.compare))
+        return value
+
+
+class And(Validator):
+    '''Composes multiple validators with conjunction.
+    It will also thread the value through.  An empty And
+    simply returns without error.'''
+
+    def __init__(self, param, *validators, **kwargs):
+        super(And, self).__init__(param, **kwargs)
+        self.validators = validators
+
+    def run(self, value, errors):
+        for validator in self.validators:
+            these_errors = []
+            validator.param = self.param
+            value = validator(value, these_errors)
+            if these_errors:
+                for error in these_errors:
+                    self.add_error(errors, error)
+                break
+        return value
+
+
+class Or(Validator):
+    '''Composes multiple validators with disjunction. An empty
+    Or returns with an error.'''
+
+    def __init__(self, param, *validators, **kwargs):
+        super(Or, self).__init__(param, **kwargs)
+        self.validators = validators
+
+    def run(self, value, errors):
+        if not self.validators:
+            self.add_error(errors, 'empty disjunction')
+            return value
+
+        all_errors = []
+        for validator in self.validators:
+            these_errors = []
+            validator.param = self.param
+            new_value = validator(value, these_errors)
+            if not these_errors:
+                return new_value
+            all_errors.append(these_errors)
+
+        msg = 'disjunction of evaluators failed: !({0})'
+        error_groups = ['({0})'.format(', '.join(error_group))
+                        for error_group in all_errors]
+        self.add_error(errors,
+                       msg.format(' || '.join(error_groups)))
+        return value
+
+
+class Enum(Validator):
+    '''A value that must be in a given enumeration.'''
+    def __init__(self, param, *values, **kwargs):
+        super(Enum, self).__init__(param, **kwargs)
+        self.values = values
+        if len(values) < 2:
+            raise TypeError('Expected at least two values.')
+        self.validator = Or(param, *[Equals('', x) for x in values])
+
+    def run(self, value, errors):
+        return self.validator(value, errors)
