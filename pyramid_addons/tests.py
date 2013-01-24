@@ -4,8 +4,8 @@ import re
 import unittest
 from pyramid.testing import DummyRequest
 from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
-                                       TextNumber, Validator, WhiteSpaceString,
-                                       validated_form)
+                                       TextNumber, Validator, RegexString,
+                                       WhiteSpaceString, validated_form)
 
 
 class AndTest(unittest.TestCase):
@@ -153,6 +153,12 @@ class OrTest(unittest.TestCase):
 
 
 class StringTests(unittest.TestCase):
+    def test_fail_invalid_regex(self):
+        validator = RegexString('field')
+        errors = []
+        validator('[a', errors)
+        self.assertEqual(1, len(errors))
+
     def test_fail_invalid_whitespace(self):
         validator = String('field', invalid_re=' ')
         errors = []

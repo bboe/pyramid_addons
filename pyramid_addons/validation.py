@@ -145,6 +145,17 @@ class WhiteSpaceString(Validator):
         return value
 
 
+class RegexString(WhiteSpaceString):
+    """A validator for strings that compile as regular expressions."""
+    def run(self, value, errors):
+        retval = super(RegexString, self).run(value, errors)
+        try:
+            re.compile(value)
+        except re.error:
+            self.add_error(errors, 'not a valid regular expression')
+        return retval
+
+
 class String(WhiteSpaceString):
     '''A validator that removes whitespace on both ends.'''
     def run(self, value, *args):
