@@ -4,7 +4,7 @@ try:
 except ImportError:
     # Python 2.6+
     from ConfigParser import RawConfigParser
-from datetime import datetime
+from datetime import datetime, timedelta, tzinfo
 from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
                                     HTTPException, HTTPGone, HTTPOk)
@@ -59,10 +59,30 @@ def load_settings(config_file):
     return settings
 
 
+class UTC(tzinfo):
+    """UTC tz
+
+    From: http://docs.python.org/release/2.4.2/lib/datetime-tzinfo.html
+
+    """
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return 'UTC'
+
+    def utcoffset(self, dt):
+        return timedelta(0)
+
+
 def pretty_date(the_datetime):
     # Source modified from
     # http://stackoverflow.com/a/5164027/176978
-    diff = datetime.utcnow() - the_datetime
+    # If naive assume UTC for the_datetime
+    if the_datetime.tzinfo:
+        diff = datetime.now(UTC()) - the_datetime
+    else:
+        diff = datetime.utcnow() - the_datetime
     if diff.days > 7 or diff.days < 0:
         return the_datetime.strftime('%A %B %d, %Y')
     elif diff.days == 1:

@@ -2,10 +2,21 @@ from __future__ import unicode_literals
 
 import re
 import unittest
+from datetime import datetime
 from pyramid.testing import DummyRequest
+from pyramid_addons.helpers import pretty_date, UTC
 from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
                                        TextNumber, Validator, RegexString,
                                        WhiteSpaceString, validated_form)
+
+
+class PrettyDateTest(unittest.TestCase):
+    def test_naive(self):
+        self.assertTrue('hours' in pretty_date(datetime.now()))
+        self.assertEqual('just now', pretty_date(datetime.utcnow()))
+
+    def test_tzenabled(self):
+        self.assertEqual('just now', pretty_date(datetime.now(UTC())))
 
 
 class AndTest(unittest.TestCase):
