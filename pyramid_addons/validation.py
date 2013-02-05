@@ -23,7 +23,8 @@ def validated_form(*simple_vals, **param_vals):
             try:
                 data = request.json_body
             except ValueError:
-                return http_bad_request(request, 'Request body must be JSON.')
+                return http_bad_request(request,
+                                        messages='Request body must be JSON.')
             # Validate each of the named parameters
             error_messages = []
             validated_params = {}
@@ -41,7 +42,7 @@ def validated_form(*simple_vals, **param_vals):
                 else:
                     error_messages.append(MISSING_ERROR.format(src_param))
             if error_messages:
-                return http_bad_request(request, error_messages)
+                return http_bad_request(request, messages=error_messages)
             return function(request, **validated_params)
         return wrapped
     return initial_wrap

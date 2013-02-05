@@ -19,33 +19,34 @@ def complete_date(the_datetime):
             .astimezone(timezone(TIMEZONE)).strftime('%H:%M, %A %B %d, %Y'))
 
 
-def http_bad_request(request, messages):
+def http_bad_request(request, **kwargs):
     request.response.status = HTTPBadRequest.code
-    return {'error': 'Invalid request', 'messages': messages}
+    kwargs.setdefault('error', 'Invalid request')
+    return kwargs
 
 
-def http_conflict(request, message):
+def http_conflict(request, **kwargs):
     request.response.status = HTTPConflict.code
-    return {'message': message}
+    return kwargs
 
 
-def http_created(request, redir_location, headers=None):
+def http_created(request, headers=None, **kwargs):
     request.response.status = HTTPCreated.code
     if headers:
         request.response.headerlist.extend(headers)
-    return {'redir_location': redir_location}
+    return kwargs
 
 
-def http_gone(request, redir_location, headers=None):
+def http_gone(request, headers=None, **kwargs):
     request.response.status = HTTPGone.code
     if headers:
         request.response.headerlist.extend(headers)
-    return {'redir_location': redir_location}
+    return kwargs
 
 
-def http_ok(request, message):
+def http_ok(request, **kwargs):
     request.response.status = HTTPOk.code
-    return {'message': message}
+    return kwargs
 
 
 def load_settings(config_file):
