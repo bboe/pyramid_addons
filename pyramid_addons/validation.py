@@ -3,8 +3,8 @@ import sys
 from functools import wraps
 from .helpers import http_bad_request
 
-# Inspirted by reddit's validator code
-# github.com/reddit/reddit/blob/master/r2/r2/controllers/validator/validator.py
+# Inspired by reddit's validator code
+# https://github.com/reddit/reddit/blob/master/r2/r2/lib/validator/validator.py
 
 # Configure text type
 if sys.version_info < (3, 0):
