@@ -6,7 +6,7 @@ from datetime import datetime
 from pyramid.testing import DummyRequest
 from pyramid_addons.helpers import pretty_date, UTC
 from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
-                                       TextNumber, Validator, RegexString,
+                                       TextNumber, RegexString,
                                        WhiteSpaceString, validated_form)
 
 
@@ -47,28 +47,30 @@ class AndTest(unittest.TestCase):
 
 class DecoratorTest(unittest.TestCase):
     @staticmethod
-    @validated_form(required=Validator('field_1'),
-                    optional=Validator('field_2', optional=True,
-                                       default='foobar'))
-    def dummy_function(request, required, optional):
+    @validated_form(required=String('field_1'),
+                    optional=String('field_2', optional=True,
+                                    default='foobar'))
+    def dummy_function(_, required, optional):
         return required, optional
 
     def test_provide_all(self):
         json_body = {'field_1': 'data_1', 'field_2': 'data_2'}
         request = DummyRequest(json_body=json_body)
+        # pylint: disable-msg=E1120
         self.assertEqual(('data_1', 'data_2'), self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
 
     def test_provide_none(self):
         json_body = {}
         request = DummyRequest(json_body=json_body)
-        retval = self.dummy_function(request)
+        retval = self.dummy_function(request)  # pylint: disable-msg=E1120
         self.assertEqual(400, request.response.status_code)
         self.assertEqual(['Missing parameter: field_1'], retval['messages'])
 
     def test_provide_required(self):
         json_body = {'field_1': 'data_1'}
         request = DummyRequest(json_body=json_body)
+        # pylint: disable-msg=E1120
         self.assertEqual(('data_1', 'foobar'), self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
 
@@ -237,7 +239,7 @@ class TextNumberTests(unittest.TestCase):
 
 
 class WhiteSpaceStringTests(unittest.TestCase):
-    def test_fail_invalid_precompiled_re(self):
+    def test_fail_invalid_precomp_re(self):
         pre = re.compile('foo')
         validator = WhiteSpaceString('field', invalid_re=pre)
         errors = []

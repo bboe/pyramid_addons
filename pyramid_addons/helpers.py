@@ -1,9 +1,11 @@
 try:
-    # Python 3
-    from configparser import RawConfigParser
-except ImportError:
     # Python 2.6+
     from ConfigParser import RawConfigParser
+except ImportError:
+    # Python 3
+    # pylint: disable-msg=F0401
+    from configparser import RawConfigParser  # NOQA
+    # pylint: enable-msg=F0401
 from datetime import datetime, timedelta, tzinfo
 from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
@@ -66,13 +68,13 @@ class UTC(tzinfo):
     From: http://docs.python.org/release/2.4.2/lib/datetime-tzinfo.html
 
     """
-    def dst(self, dt):
+    def dst(self, _):
         return timedelta(0)
 
-    def tzname(self, dt):
+    def tzname(self, _):
         return 'UTC'
 
-    def utcoffset(self, dt):
+    def utcoffset(self, _):
         return timedelta(0)
 
 
@@ -85,23 +87,24 @@ def pretty_date(the_datetime):
     else:
         diff = datetime.utcnow() - the_datetime
     if diff.days > 7 or diff.days < 0:
-        return the_datetime.strftime('%A %B %d, %Y')
+        retval = the_datetime.strftime('%A %B %d, %Y')
     elif diff.days == 1:
-        return '1 day ago'
+        retval = '1 day ago'
     elif diff.days > 1:
-        return '{0} days ago'.format(diff.days)
+        retval = '{0} days ago'.format(diff.days)
     elif diff.seconds <= 1:
-        return 'just now'
+        retval = 'just now'
     elif diff.seconds < 60:
-        return '{0} seconds ago'.format(diff.seconds)
+        retval = '{0} seconds ago'.format(diff.seconds)
     elif diff.seconds < 120:
-        return '1 minute ago'
+        retval = '1 minute ago'
     elif diff.seconds < 3600:
-        return '{0} minutes ago'.format(diff.seconds / 60)
+        retval = '{0} minutes ago'.format(diff.seconds / 60)
     elif diff.seconds < 7200:
-        return '1 hour ago'
+        retval = '1 hour ago'
     else:
-        return '{0} hours ago'.format(diff.seconds / 3600)
+        retval = '{0} hours ago'.format(diff.seconds / 3600)
+    return retval
 
 
 def site_layout(layout_template):

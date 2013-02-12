@@ -8,13 +8,13 @@ from .helpers import http_bad_request
 
 # Configure text type
 if sys.version_info < (3, 0):
-    text_type = unicode
+    text_type = unicode  # pylint: disable-msg=C0103
 else:
-    text_type = str
+    text_type = str  # pylint: disable-msg=C0103
 
 
-def validated_form(*simple_vals, **param_vals):
-    MISSING_ERROR = 'Missing parameter: {0}'
+def validated_form(**param_vals):
+    MISSING_ERROR = 'Missing parameter: {0}'  # pylint: disable-msg=C0103
 
     def initial_wrap(function):
         @wraps(function)
@@ -43,15 +43,16 @@ def validated_form(*simple_vals, **param_vals):
                     error_messages.append(MISSING_ERROR.format(src_param))
             if error_messages:
                 return http_bad_request(request, messages=error_messages)
+            # pylint: disable-msg=W0142
             return function(request, **validated_params)
         return wrapped
     return initial_wrap
 
 
 class Validator(object):
-    '''A base validator that will accept any input.
+    """An abstract validator class.
 
-    This class should be extended to implement real validators.'''
+    """
     def __init__(self, param, optional=False, default=None):
         self.param = param
         self.optional = optional
@@ -65,11 +66,73 @@ class Validator(object):
                       .format(self.param, message))
 
     def run(self, value, errors):
+        """Perform the validation using the validator.
+
+        Subclasses must minimally define this function.
+
+        :param value: The value send from the client of the request.
+        :param errors: A list of errors that should be used in combination
+            with add_error.
+        :returns: The value returned will be passed to the function that this
+            validator decorates. It can be altered, or returned as-is.
+
+        """
+        raise NotImplementedError('run must be defined in a subclass.')
+
+
+class And(Validator):
+    """Composes multiple validators with conjunction.
+    It will also thread the value through.  An empty And
+    simply returns without error."""
+
+    def __init__(self, param, *validators, **kwargs):
+        super(And, self).__init__(param, **kwargs)
+        self.validators = validators
+
+    def run(self, value, errors):
+        for validator in self.validators:
+            these_errors = []
+            validator.param = self.param
+            value = validator(value, these_errors)
+            if these_errors:
+                for error in these_errors:
+                    self.add_error(errors, error)
+                break
+        return value
+
+
+class Enum(Validator):
+
+    """Validator that verifies the value is one of a few options."""
+
+    def __init__(self, param, *values, **kwargs):
+        super(Enum, self).__init__(param, **kwargs)
+        self.values = values
+        if len(values) < 2:
+            raise TypeError('Expected at least two values.')
+        # pylint: disable-msg=W0142
+        self.validator = Or(param, *[Equals('', x) for x in values])
+
+    def run(self, value, errors):
+        return self.validator(value, errors)
+
+
+class Equals(Validator):
+    """A validator that checks for object equality"""
+
+    def __init__(self, param, compare, **kwargs):
+        super(Equals, self).__init__(param, **kwargs)
+        self.compare = compare
+
+    def run(self, value, errors):
+        if not value == self.compare:
+            self.add_error(errors,
+                           "must equal '{0}'".format(self.compare))
         return value
 
 
 class List(Validator):
-    '''A validator that validates items within a list.'''
+    """A validator that validates items within a list."""
     def __init__(self, param, validator, min_elements=None, max_elements=None,
                  **kwargs):
         super(List, self).__init__(param, **kwargs)
@@ -92,8 +155,38 @@ class List(Validator):
         return value
 
 
+class Or(Validator):
+    """Composes multiple validators with disjunction. An empty
+    Or returns with an error."""
+
+    def __init__(self, param, *validators, **kwargs):
+        super(Or, self).__init__(param, **kwargs)
+        self.validators = validators
+
+    def run(self, value, errors):
+        if not self.validators:
+            self.add_error(errors, 'empty disjunction')
+            return value
+
+        all_errors = []
+        for validator in self.validators:
+            these_errors = []
+            validator.param = self.param
+            new_value = validator(value, these_errors)
+            if not these_errors:
+                return new_value
+            all_errors.append(these_errors)
+
+        msg = 'disjunction of evaluators failed: !({0})'
+        error_groups = ['({0})'.format(', '.join(error_group))
+                        for error_group in all_errors]
+        self.add_error(errors,
+                       msg.format(' || '.join(error_groups)))
+        return value
+
+
 class TextNumber(Validator):
-    '''A validator that accepts only text that represents integers.'''
+    """A validator that accepts only text that represents integers."""
     def __init__(self, param, min_value=None, max_value=None, **kwargs):
         super(TextNumber, self).__init__(param, **kwargs)
         self.min_value = min_value
@@ -118,7 +211,7 @@ class TextNumber(Validator):
 
 
 class WhiteSpaceString(Validator):
-    '''A validator for a generic string that allows whitespace on both ends.'''
+    """A validator for a generic string that allows whitespace on both ends."""
     def __init__(self, param, invalid_re=None, min_length=0, max_length=None,
                  **kwargs):
         super(WhiteSpaceString, self).__init__(param, **kwargs)
@@ -158,84 +251,6 @@ class RegexString(WhiteSpaceString):
 
 
 class String(WhiteSpaceString):
-    '''A validator that removes whitespace on both ends.'''
+    """A validator that removes whitespace on both ends."""
     def run(self, value, *args):
         return super(String, self).run(value.strip(), *args)
-
-
-class Equals(Validator):
-    '''A validator that checks for object equality'''
-
-    def __init__(self, param, compare, **kwargs):
-        super(Equals, self).__init__(param, **kwargs)
-        self.compare = compare
-
-    def run(self, value, errors):
-        if not value == self.compare:
-            self.add_error(errors,
-                           "must equal '{0}'".format(self.compare))
-        return value
-
-
-class And(Validator):
-    '''Composes multiple validators with conjunction.
-    It will also thread the value through.  An empty And
-    simply returns without error.'''
-
-    def __init__(self, param, *validators, **kwargs):
-        super(And, self).__init__(param, **kwargs)
-        self.validators = validators
-
-    def run(self, value, errors):
-        for validator in self.validators:
-            these_errors = []
-            validator.param = self.param
-            value = validator(value, these_errors)
-            if these_errors:
-                for error in these_errors:
-                    self.add_error(errors, error)
-                break
-        return value
-
-
-class Or(Validator):
-    '''Composes multiple validators with disjunction. An empty
-    Or returns with an error.'''
-
-    def __init__(self, param, *validators, **kwargs):
-        super(Or, self).__init__(param, **kwargs)
-        self.validators = validators
-
-    def run(self, value, errors):
-        if not self.validators:
-            self.add_error(errors, 'empty disjunction')
-            return value
-
-        all_errors = []
-        for validator in self.validators:
-            these_errors = []
-            validator.param = self.param
-            new_value = validator(value, these_errors)
-            if not these_errors:
-                return new_value
-            all_errors.append(these_errors)
-
-        msg = 'disjunction of evaluators failed: !({0})'
-        error_groups = ['({0})'.format(', '.join(error_group))
-                        for error_group in all_errors]
-        self.add_error(errors,
-                       msg.format(' || '.join(error_groups)))
-        return value
-
-
-class Enum(Validator):
-    '''A value that must be in a given enumeration.'''
-    def __init__(self, param, *values, **kwargs):
-        super(Enum, self).__init__(param, **kwargs)
-        self.values = values
-        if len(values) < 2:
-            raise TypeError('Expected at least two values.')
-        self.validator = Or(param, *[Equals('', x) for x in values])
-
-    def run(self, value, errors):
-        return self.validator(value, errors)
