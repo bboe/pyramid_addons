@@ -25,7 +25,10 @@ def validated_form(**param_vals):
             for dst_param, validator in param_vals.items():
                 src_param = validator.param
                 # Select the correct source to find the parameter in
-                data = getattr(request, validator.source, [])
+                try:
+                    data = getattr(request, validator.source)
+                except (AttributeError, ValueError):
+                    data = []
                 # Look for the parameter
                 if src_param in data:
                     validator_errors = []
