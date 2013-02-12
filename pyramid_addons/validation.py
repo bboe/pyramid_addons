@@ -14,22 +14,19 @@ else:
 
 
 def validated_form(**param_vals):
-    MISSING_ERROR = 'Missing parameter: {0}'  # pylint: disable-msg=C0103
+    MISSING_ERROR = 'Missing {0} parameter: {1}'  # pylint: disable-msg=C0103
 
     def initial_wrap(function):
         @wraps(function)
         def wrapped(request):
-            # Ensure the request body is json
-            try:
-                data = request.json_body
-            except ValueError:
-                return http_bad_request(request,
-                                        messages='Request body must be JSON.')
             # Validate each of the named parameters
             error_messages = []
             validated_params = {}
             for dst_param, validator in param_vals.items():
                 src_param = validator.param
+                # Select the correct source to find the parameter in
+                data = getattr(request, validator.source, [])
+                # Look for the parameter
                 if src_param in data:
                     validator_errors = []
                     result = validator(data[src_param], validator_errors)
@@ -40,7 +37,8 @@ def validated_form(**param_vals):
                 elif validator.optional:
                     validated_params[dst_param] = validator.default
                 else:
-                    error_messages.append(MISSING_ERROR.format(src_param))
+                    error_messages.append(MISSING_ERROR
+                                          .format(validator.source, src_param))
             if error_messages:
                 return http_bad_request(request, messages=error_messages)
             # pylint: disable-msg=W0142
@@ -50,13 +48,38 @@ def validated_form(**param_vals):
 
 
 class Validator(object):
-    """An abstract validator class.
 
-    """
-    def __init__(self, param, optional=False, default=None):
+    """An abstract validator class."""
+
+    SOURCE_GET = 'GET'
+    SOURCE_JSON_BODY = 'json_body'
+    SOURCE_MATCHDICT = 'matchdict'
+    SOURCE_POST = 'POST'
+
+    default_source = SOURCE_JSON_BODY
+
+    def __init__(self, param, optional=False, default=None, source=None):
+        """Create a Validator instance
+
+        :param param: The input, or source, parameter name.
+        :param optional: When True, don't enforce a value to be provided.
+            Note that if a value is provided, it will then need to pass the
+            validation.
+        :param default: The value to return when the parameter is optional and
+            not provided.
+        :param source: The source that param should be found in. Valid options
+            are: SOURCE_MATCHDICT, SOURCE_GET, SOURCE_POST and
+            SOURCE_JSON_BODY. When None, use the class's `default_source`
+            selection.
+
+        """
+        if not optional and default is not None:
+            raise TypeError('Cannot set default when optional is not True')
+
         self.param = param
         self.optional = optional
         self.default = default
+        self.source = source if source is not None else self.default_source
 
     def __call__(self, value, *args):
         return self.run(value, *args)

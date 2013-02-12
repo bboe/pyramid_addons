@@ -49,15 +49,19 @@ class DecoratorTest(unittest.TestCase):
     @staticmethod
     @validated_form(required=String('field_1'),
                     optional=String('field_2', optional=True,
-                                    default='foobar'))
-    def dummy_function(_, required, optional):
-        return required, optional
+                                    default='foobar'),
+                    get=String('field_1', source=String.SOURCE_GET,
+                               optional=True))
+    def dummy_function(_, **kwargs):
+        return set(kwargs.values())
 
     def test_provide_all(self):
-        json_body = {'field_1': 'data_1', 'field_2': 'data_2'}
-        request = DummyRequest(json_body=json_body)
+        json_body = {'field_1': 'json_data_1', 'field_2': 'json_data_2'}
+        request = DummyRequest(GET={'field_1': 'get_data_1'},
+                               json_body=json_body)
         # pylint: disable-msg=E1120
-        self.assertEqual(('data_1', 'data_2'), self.dummy_function(request))
+        self.assertEqual(set(['get_data_1', 'json_data_1', 'json_data_2']),
+                         self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
 
     def test_provide_none(self):
@@ -65,13 +69,15 @@ class DecoratorTest(unittest.TestCase):
         request = DummyRequest(json_body=json_body)
         retval = self.dummy_function(request)  # pylint: disable-msg=E1120
         self.assertEqual(400, request.response.status_code)
-        self.assertEqual(['Missing parameter: field_1'], retval['messages'])
+        self.assertEqual(['Missing json_body parameter: field_1'],
+                         retval['messages'])
 
     def test_provide_required(self):
         json_body = {'field_1': 'data_1'}
         request = DummyRequest(json_body=json_body)
         # pylint: disable-msg=E1120
-        self.assertEqual(('data_1', 'foobar'), self.dummy_function(request))
+        self.assertEqual(set([None, 'data_1', 'foobar']),
+                         self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
 
 
