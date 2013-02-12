@@ -13,7 +13,14 @@ else:
     text_type = str  # pylint: disable-msg=C0103
 
 
-def validated_form(**param_vals):
+# Validator Sources
+SOURCE_GET = 'GET'
+SOURCE_JSON_BODY = 'json_body'
+SOURCE_MATCHDICT = 'matchdict'
+SOURCE_POST = 'POST'
+
+
+def validate(**param_vals):
     MISSING_ERROR = 'Missing {0} parameter: {1}'  # pylint: disable-msg=C0103
 
     def initial_wrap(function):
@@ -32,7 +39,8 @@ def validated_form(**param_vals):
                 # Look for the parameter
                 if src_param in data:
                     validator_errors = []
-                    result = validator(data[src_param], validator_errors)
+                    result = validator(data[src_param], validator_errors,
+                                       request)
                     if validator_errors:
                         error_messages.extend(validator_errors)
                     else:
@@ -53,11 +61,6 @@ def validated_form(**param_vals):
 class Validator(object):
 
     """An abstract validator class."""
-
-    SOURCE_GET = 'GET'
-    SOURCE_JSON_BODY = 'json_body'
-    SOURCE_MATCHDICT = 'matchdict'
-    SOURCE_POST = 'POST'
 
     default_source = SOURCE_JSON_BODY
 
@@ -91,7 +94,7 @@ class Validator(object):
         errors.append('Validation error on param \'{0}\': {1}'
                       .format(self.param, message))
 
-    def run(self, value, errors):
+    def run(self, value, errors, request):
         """Perform the validation using the validator.
 
         Subclasses must minimally define this function.
@@ -99,6 +102,7 @@ class Validator(object):
         :param value: The value send from the client of the request.
         :param errors: A list of errors that should be used in combination
             with add_error.
+        :param request: The complete pyramid request object.
         :returns: The value returned will be passed to the function that this
             validator decorates. It can be altered, or returned as-is.
 
@@ -115,11 +119,11 @@ class And(Validator):
         super(And, self).__init__(param, **kwargs)
         self.validators = validators
 
-    def run(self, value, errors):
+    def run(self, value, errors, request):
         for validator in self.validators:
             these_errors = []
             validator.param = self.param
-            value = validator(value, these_errors)
+            value = validator(value, these_errors, request)
             if these_errors:
                 for error in these_errors:
                     self.add_error(errors, error)
@@ -139,8 +143,8 @@ class Enum(Validator):
         # pylint: disable-msg=W0142
         self.validator = Or(param, *[Equals('', x) for x in values])
 
-    def run(self, value, errors):
-        return self.validator(value, errors)
+    def run(self, value, errors, request):
+        return self.validator(value, errors, request)
 
 
 class Equals(Validator):
@@ -150,7 +154,7 @@ class Equals(Validator):
         super(Equals, self).__init__(param, **kwargs)
         self.compare = compare
 
-    def run(self, value, errors):
+    def run(self, value, errors, _):
         if not value == self.compare:
             self.add_error(errors,
                            "must equal '{0}'".format(self.compare))
@@ -166,7 +170,7 @@ class List(Validator):
         self.min_elements = min_elements
         self.max_elements = max_elements
 
-    def run(self, value, errors):
+    def run(self, value, errors, request):
         if not isinstance(value, list):
             self.add_error(errors, 'must be a list')
             return value
@@ -177,7 +181,7 @@ class List(Validator):
             self.add_error(errors, msg.format('<', self.max_elements))
         for i, item in enumerate(value):
             self.validator.param = (self.param, i)
-            value[i] = self.validator(item, errors)
+            value[i] = self.validator(item, errors, request)
         return value
 
 
@@ -189,7 +193,7 @@ class Or(Validator):
         super(Or, self).__init__(param, **kwargs)
         self.validators = validators
 
-    def run(self, value, errors):
+    def run(self, value, errors, request):
         if not self.validators:
             self.add_error(errors, 'empty disjunction')
             return value
@@ -198,7 +202,7 @@ class Or(Validator):
         for validator in self.validators:
             these_errors = []
             validator.param = self.param
-            new_value = validator(value, these_errors)
+            new_value = validator(value, these_errors, request)
             if not these_errors:
                 return new_value
             all_errors.append(these_errors)
@@ -218,7 +222,7 @@ class TextNumber(Validator):
         self.min_value = min_value
         self.max_value = max_value
 
-    def run(self, value, errors):
+    def run(self, value, errors, _):
         if not isinstance(value, text_type):
             self.add_error(errors, 'must be a unicode string')
             return value
@@ -248,7 +252,7 @@ class WhiteSpaceString(Validator):
         else:
             self.invalid_re = invalid_re
 
-    def run(self, value, errors):
+    def run(self, value, errors, _):
         if not isinstance(value, text_type):
             self.add_error(errors, 'must be a unicode string')
             return value
@@ -267,8 +271,8 @@ class WhiteSpaceString(Validator):
 
 class RegexString(WhiteSpaceString):
     """A validator for strings that compile as regular expressions."""
-    def run(self, value, errors):
-        retval = super(RegexString, self).run(value, errors)
+    def run(self, value, errors, request):
+        retval = super(RegexString, self).run(value, errors, request)
         try:
             re.compile(value)
         except re.error:
