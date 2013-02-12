@@ -39,8 +39,12 @@ def validate(**param_vals):
                 # Look for the parameter
                 if src_param in data:
                     validator_errors = []
-                    result = validator(data[src_param], validator_errors,
-                                       request)
+                    try:
+                        result = validator(data[src_param], validator_errors,
+                                           request)
+                    except ValidateAbort as exc:
+                        # Return the desired abort response
+                        return exc.response
                     if validator_errors:
                         error_messages.extend(validator_errors)
                     else:
@@ -56,6 +60,15 @@ def validate(**param_vals):
             return function(request, **validated_params)
         return wrapped
     return initial_wrap
+
+
+class ValidateAbort(Exception):
+
+    """An exception that when raised will end all further validation."""
+
+    def __init__(self, response):
+        super(ValidateAbort, self).__init__()
+        self.response = response
 
 
 class Validator(object):
