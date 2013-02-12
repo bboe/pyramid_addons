@@ -9,7 +9,8 @@ except ImportError:
 from datetime import datetime, timedelta, tzinfo
 from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
-                                    HTTPException, HTTPGone, HTTPOk)
+                                    HTTPException, HTTPForbidden, HTTPGone,
+                                    HTTPOk)
 from pyramid.renderers import get_renderer
 from pytz import timezone, utc
 
@@ -36,6 +37,12 @@ def http_created(request, headers=None, **kwargs):
     request.response.status = HTTPCreated.code
     if headers:
         request.response.headerlist.extend(headers)
+    return kwargs
+
+
+def http_forbidden(request, **kwargs):
+    request.response.status = HTTPForbidden.code
+    kwargs.setdefault('error', 'Forbidden')
     return kwargs
 
 
