@@ -44,6 +44,7 @@ def validate(**param_vals):
                                            request)
                     except ValidateAbort as exc:
                         # Return the desired abort response
+                        request.override_renderer = 'json'  # Hack for now
                         return exc.response
                     if validator_errors:
                         error_messages.extend(validator_errors)
@@ -55,6 +56,7 @@ def validate(**param_vals):
                     error_messages.append(MISSING_ERROR
                                           .format(validator.source, src_param))
             if error_messages:
+                request.override_renderer = 'json'  # Hack for now
                 return http_bad_request(request, messages=error_messages)
             # pylint: disable-msg=W0142
             return function(request, **validated_params)
