@@ -25,7 +25,7 @@ setup(name=PACKAGE_NAME,
                    'Topic :: Utilities'],
       description=('A package containing extra needed pyramid functionality '
                    'including helper functions and form validators.'),
-      install_requires=['pyramid>=1.3', 'pytz'],
+      install_requires=['pyramid>=1.3'],
       keywords='pyramid validation addons',
       license='Simplified BSD License',
       long_description=README,

@@ -12,14 +12,6 @@ from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
                                     HTTPException, HTTPForbidden, HTTPGone,
                                     HTTPOk)
 from pyramid.renderers import get_renderer
-from pytz import timezone, utc
-
-TIMEZONE = 'US/Pacific'  # Move this into settings at some point
-
-
-def complete_date(the_datetime):
-    return (the_datetime.replace(tzinfo=utc)
-            .astimezone(timezone(TIMEZONE)).strftime('%H:%M, %A %B %d, %Y'))
 
 
 def http_bad_request(request, **kwargs):
