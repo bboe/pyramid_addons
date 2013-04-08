@@ -115,8 +115,8 @@ def site_layout(layout_template):
         @wraps(function)
         def wrapped(request, *args, **kwargs):
             info = function(request, *args, **kwargs)
-            if isinstance(info, HTTPException):
-                return info  # HTTPException objects should be returned as is
+            if not isinstance(info, dict):  # Only layout dictionaries
+                return info
             renderer = get_renderer(layout_template)
             # Required parameters
             info['_LAYOUT'] = renderer.implementation().macros['layout']
