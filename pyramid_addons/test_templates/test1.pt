@@ -1,0 +1,1 @@
+<p metal:define-macro="test1">This is test 1</p>

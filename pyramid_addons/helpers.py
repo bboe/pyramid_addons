@@ -106,8 +106,14 @@ def pretty_date(the_datetime):
     return retval
 
 
-def site_layout(layout_template):
+def site_layout(layout_template, *macro_templates):
     """A decorator that incorporates the site layout template.
+
+    The parameter layout_template should provide the name of the appropriate
+    layout template.
+
+    Additional parameters may be used to specify templates that contain
+    macros. The macros will be available as _MACROS['macro_name'].
 
     This should only be used on view functions that return dictionaries.
     """
@@ -122,6 +128,14 @@ def site_layout(layout_template):
             info['_LAYOUT'] = renderer.implementation().macros['layout']
             info['_S'] = request.static_path
             info['_R'] = request.route_path
+            # Load additional macros
+            macros = {}
+            for template in macro_templates:
+                cur_macros = get_renderer(template).implementation().macros
+                for name in cur_macros.names:
+                    macros[name] = cur_macros[name]
+            if macros:
+                info['_MACROS'] = macros
             # Required parameters that can be overwritten
             info.setdefault('javascripts', None)
             info.setdefault('css_files', None)
