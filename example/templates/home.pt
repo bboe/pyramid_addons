@@ -1,0 +1,10 @@
+<div metal:use-macro="_LAYOUT">
+<div metal:fill-slot="content">
+  <h3>Sample Home Page</h3>
+  <ul tal:condition="items">
+    <li tal:repeat="item items">
+      <a href="${_R('item_item', item_id=item.id)}">${item.name}: ${item.value}</a>
+    </li>
+  </ul>
+</div>
+</div>

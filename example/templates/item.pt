@@ -1,0 +1,6 @@
+<div metal:use-macro="_LAYOUT">
+<div metal:fill-slot="content">
+  <h3>Item: ${item.name}</h3>
+  <p><strong>Value:</strong> ${item.value}</p>
+</div>
+</div>

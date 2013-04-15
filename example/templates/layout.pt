@@ -1,0 +1,6 @@
+<metal:page define-macro="layout"><!DOCTYPE html>
+<meta charset="UTF-8" />
+<title><p tal:condition="page_title"
+          tal:replace="page_title + ' - '">pyramid_addons example</title>
+<div metal:define-slot="content">
+</div></metal:page>
