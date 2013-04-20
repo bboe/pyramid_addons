@@ -143,6 +143,13 @@ class ListTest(unittest.TestCase):
                                                               None))
         self.assertEqual(0, len(errors))
 
+    def test_successful_zero_elements(self):
+        validator = List('field', String(''))
+        errors = []
+        data = []
+        self.assertEqual([], validator(data, errors, None))
+        self.assertEqual(0, len(errors))
+
 
 class OrTest(unittest.TestCase):
     def test_fail_all(self):
