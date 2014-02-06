@@ -258,7 +258,7 @@ class TextNumber(Validator):
 class WhiteSpaceString(Validator):
     """A validator for a generic string that allows whitespace on both ends."""
     def __init__(self, param, invalid_re=None, min_length=0, max_length=None,
-                 **kwargs):
+                 trim_whitespace=False, lowercase=False, **kwargs):
         super(WhiteSpaceString, self).__init__(param, **kwargs)
         self.min_length = min_length
         self.max_length = max_length
@@ -266,11 +266,18 @@ class WhiteSpaceString(Validator):
             self.invalid_re = re.compile(invalid_re)
         else:
             self.invalid_re = invalid_re
+        self.trim_whitespace = trim_whitespace
+        self.lowercase = lowercase
 
     def run(self, value, errors, _):
         if not isinstance(value, text_type):
             self.add_error(errors, 'must be a unicode string')
             return value
+
+        if self.trim_whitespace:
+            value = value.strip()
+        if self.lowercase:
+            value = value.lower()
 
         if self.min_length and len(value) < self.min_length:
             self.add_error(errors,
@@ -297,5 +304,5 @@ class RegexString(WhiteSpaceString):
 
 class String(WhiteSpaceString):
     """A validator that removes whitespace on both ends."""
-    def run(self, value, *args):
-        return super(String, self).run(value.strip(), *args)
+    def __init__(self, *args, **kwargs):
+        super(String, self).__init__(*args, trim_whitespace=True, **kwargs)

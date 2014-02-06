@@ -190,11 +190,29 @@ class StringTests(unittest.TestCase):
         validator(' hello world ', errors, None)
         self.assertEqual(1, len(errors))
 
+    def test_fail_type_bool(self):
+        validator = String('field')
+        errors = []
+        validator(True, errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_fail_type_int(self):
+        validator = String('field')
+        errors = []
+        validator(1, errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_fail_type_none(self):
+        validator = String('field')
+        errors = []
+        validator(None, errors, None)
+        self.assertEqual(1, len(errors))
+
     def test_pass_all(self):
         validator = String('field', invalid_re='foo', min_length=3,
-                           max_length=3)
+                           max_length=3, lowercase=True)
         errors = []
-        value = validator(' bar ', errors, None)
+        value = validator(' bAr ', errors, None)
         self.assertEqual(0, len(errors))
         self.assertEqual('bar', value)
 
@@ -281,6 +299,24 @@ class WhiteSpaceStringTests(unittest.TestCase):
         errors = []
         validator(' foo ', errors, None)
         self.assertEqual(2, len(errors))
+
+    def test_fail_type_bool(self):
+        validator = WhiteSpaceString('field')
+        errors = []
+        validator(True, errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_fail_type_int(self):
+        validator = WhiteSpaceString('field')
+        errors = []
+        validator(1, errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_fail_type_none(self):
+        validator = WhiteSpaceString('field')
+        errors = []
+        validator(None, errors, None)
+        self.assertEqual(1, len(errors))
 
     def test_pass_all(self):
         validator = WhiteSpaceString('field', invalid_re='foo', min_length=5,
