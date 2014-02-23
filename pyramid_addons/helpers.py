@@ -7,11 +7,8 @@ except ImportError:
     from configparser import RawConfigParser  # NOQA
     # pylint: enable-msg=F0401
 from datetime import datetime, timedelta, tzinfo
-from functools import wraps
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
-                                    HTTPException, HTTPForbidden, HTTPGone,
-                                    HTTPOk)
-from pyramid.renderers import get_renderer
+                                    HTTPForbidden, HTTPGone, HTTPOk)
 
 
 def http_bad_request(request, **kwargs):
@@ -104,42 +101,3 @@ def pretty_date(the_datetime):
     else:
         retval = '{0} hours ago'.format(diff.seconds / 3600)
     return retval
-
-
-def site_layout(layout_template, *macro_templates):
-    """A decorator that incorporates the site layout template.
-
-    The parameter layout_template should provide the name of the appropriate
-    layout template.
-
-    Additional parameters may be used to specify templates that contain
-    macros. The macros will be available as _MACROS['macro_name'].
-
-    This should only be used on view functions that return dictionaries.
-    """
-    def initial_wrap(function):
-        @wraps(function)
-        def wrapped(request, *args, **kwargs):
-            info = function(request, *args, **kwargs)
-            if not isinstance(info, dict):  # Only layout dictionaries
-                return info
-            renderer = get_renderer(layout_template)
-            # Required parameters
-            info['_LAYOUT'] = renderer.implementation().macros['layout']
-            info['_S'] = request.static_path
-            info['_R'] = request.route_path
-            # Load additional macros
-            macros = {}
-            for template in macro_templates:
-                cur_macros = get_renderer(template).implementation().macros
-                for name in cur_macros.names:
-                    macros[name] = cur_macros[name]
-            if macros:
-                info['_MACROS'] = macros
-            # Required parameters that can be overwritten
-            info.setdefault('javascripts', None)
-            info.setdefault('css_files', None)
-            info.setdefault('page_title', None)
-            return info
-        return wrapped
-    return initial_wrap

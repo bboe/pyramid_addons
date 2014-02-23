@@ -4,7 +4,7 @@ import re
 import unittest
 from datetime import datetime
 from pyramid.testing import DummyRequest
-from pyramid_addons.helpers import UTC, pretty_date, site_layout
+from pyramid_addons.helpers import UTC, pretty_date
 from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
                                        TextNumber, RegexString, SOURCE_GET,
                                        WhiteSpaceString, validate)
@@ -325,18 +325,6 @@ class WhiteSpaceStringTests(unittest.TestCase):
         value = validator(' bar ', errors, None)
         self.assertEqual(0, len(errors))
         self.assertEqual(' bar ', value)
-
-
-class SiteLayoutTests(unittest.TestCase):
-    @staticmethod
-    def _dummy_function(_):
-        return {}
-
-    def test_site_layout(self):
-        # TODO: Need to setup "current_registry" with "pt" template support for
-        # this to work.
-        #tmp = site_layout('test_templates/test1.pt')(self._dummy_function)
-        pass
 
 
 if __name__ == '__main__':
