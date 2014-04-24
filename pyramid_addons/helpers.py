@@ -3,9 +3,9 @@ try:
     from ConfigParser import RawConfigParser
 except ImportError:
     # Python 3
-    # pylint: disable-msg=F0401
+    # pylint: disable=F0401
     from configparser import RawConfigParser  # NOQA
-    # pylint: enable-msg=F0401
+    # pylint: enable=F0401
 from datetime import datetime, timedelta, tzinfo
 from pyramid.httpexceptions import (HTTPBadRequest, HTTPConflict, HTTPCreated,
                                     HTTPForbidden, HTTPGone, HTTPOk)

@@ -57,7 +57,7 @@ class DecoratorTest(unittest.TestCase):
         json_body = {'field_1': 'json_data_1', 'field_2': 'json_data_2'}
         request = DummyRequest(GET={'field_1': 'get_data_1'},
                                json_body=json_body)
-        # pylint: disable-msg=E1120
+        # pylint: disable=E1120
         self.assertEqual(set(['get_data_1', 'json_data_1', 'json_data_2']),
                          self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
@@ -65,7 +65,7 @@ class DecoratorTest(unittest.TestCase):
     def test_provide_none(self):
         json_body = {}
         request = DummyRequest(json_body=json_body)
-        retval = self.dummy_function(request)  # pylint: disable-msg=E1120
+        retval = self.dummy_function(request)  # pylint: disable=E1120
         self.assertEqual(400, request.response.status_code)
         self.assertEqual(['Missing json_body parameter: field_1'],
                          retval['messages'])
@@ -73,7 +73,7 @@ class DecoratorTest(unittest.TestCase):
     def test_provide_required(self):
         json_body = {'field_1': 'data_1'}
         request = DummyRequest(json_body=json_body)
-        # pylint: disable-msg=E1120
+        # pylint: disable=E1120
         self.assertEqual(set([None, 'data_1', 'foobar']),
                          self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)

@@ -8,9 +8,9 @@ from .helpers import http_bad_request
 
 # Configure text type
 if sys.version_info < (3, 0):
-    text_type = unicode  # pylint: disable-msg=C0103
+    text_type = unicode  # pylint: disable=C0103
 else:
-    text_type = str  # pylint: disable-msg=C0103
+    text_type = str  # pylint: disable=C0103
 
 
 # Validator Sources
@@ -21,7 +21,7 @@ SOURCE_POST = 'POST'
 
 
 def validate(**param_vals):
-    MISSING_ERROR = 'Missing {0} parameter: {1}'  # pylint: disable-msg=C0103
+    MISSING_ERROR = 'Missing {0} parameter: {1}'  # pylint: disable=C0103
 
     def initial_wrap(function):
         @wraps(function)
@@ -58,7 +58,7 @@ def validate(**param_vals):
             if error_messages:
                 request.override_renderer = 'json'  # Hack for now
                 return http_bad_request(request, messages=error_messages)
-            # pylint: disable-msg=W0142
+            # pylint: disable=W0142
             return function(request, **validated_params)
         return wrapped
     return initial_wrap
@@ -155,7 +155,7 @@ class Enum(Validator):
         self.values = values
         if len(values) < 2:
             raise TypeError('Expected at least two values.')
-        # pylint: disable-msg=W0142
+        # pylint: disable=W0142
         self.validator = Or(param, *[Equals('', x) for x in values])
 
     def run(self, value, errors, request):
@@ -245,7 +245,7 @@ class TextNumber(Validator):
         try:
             num = int(value)
         except ValueError:
-            self.add_error(errors, 'must only contains digits')
+            self.add_error(errors, 'must only contain digits')
             return value
 
         if self.min_value is not None and num < self.min_value:
