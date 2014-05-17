@@ -5,9 +5,9 @@ import unittest
 from datetime import datetime
 from pyramid.testing import DummyRequest
 from pyramid_addons.helpers import UTC, pretty_date
-from pyramid_addons.validation import (And, Enum, Equals, List, Or, String,
-                                       TextNumber, RegexString, SOURCE_GET,
-                                       WhiteSpaceString, validate)
+from pyramid_addons.validation import (And, EmailAddress, Enum, Equals, List,
+                                       Or, String, TextNumber, RegexString,
+                                       SOURCE_GET, WhiteSpaceString, validate)
 
 
 class PrettyDateTest(unittest.TestCase):
@@ -77,6 +77,26 @@ class DecoratorTest(unittest.TestCase):
         self.assertEqual(set([None, 'data_1', 'foobar']),
                          self.dummy_function(request))
         self.assertEqual(200, request.response.status_code)
+
+
+class EmailAddressTest(unittest.TestCase):
+    def test_fail_no_at_symbol(self):
+        validator = EmailAddress('field')
+        errors = []
+        validator('bryce', errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_fail_too_many_at_symbols(self):
+        validator = EmailAddress('field')
+        errors = []
+        validator('bryce@bryce@foo.com', errors, None)
+        self.assertEqual(1, len(errors))
+
+    def test_case_sensitive_local(self):
+        validator = EmailAddress('field')
+        errors = []
+        value = validator('BrYcE@SoMe.CoM', errors, None)
+        self.assertEqual('BrYcE@some.com', value)
 
 
 class EnumTest(unittest.TestCase):

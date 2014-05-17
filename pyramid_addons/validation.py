@@ -306,3 +306,15 @@ class String(WhiteSpaceString):
     """A validator that removes whitespace on both ends."""
     def __init__(self, *args, **kwargs):
         super(String, self).__init__(*args, trim_whitespace=True, **kwargs)
+
+
+class EmailAddress(String):
+    """A simple email validator that supports case-sensitive local parts."""
+    def run(self, value, errors, request):
+        retval = super(EmailAddress, self).run(value, errors, request)
+        parts = retval.split('@')
+        if len(parts) != 2:
+            self.add_error(errors, 'not a valid email address')
+            return retval
+        # The local part is case-sensitive so do not lowercase it
+        return '{}@{}'.format(parts[0], parts[1].lower())
