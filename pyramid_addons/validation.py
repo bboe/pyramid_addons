@@ -317,4 +317,4 @@ class EmailAddress(String):
             self.add_error(errors, 'not a valid email address')
             return retval
         # The local part is case-sensitive so do not lowercase it
-        return '{}@{}'.format(parts[0], parts[1].lower())
+        return '{0}@{1}'.format(parts[0], parts[1].lower())
